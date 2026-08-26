@@ -1,5 +1,0 @@
-# Instala esto además de requirements.txt solo cuando vayas a correr contra
-# PostgreSQL real (dev/tests usan SQLite y no lo necesitan). Requiere tener
-# PostgreSQL (o al menos libpq / pg_config) instalado en la máquina, o bajar
-# a una versión con wheel prebuilt para tu combinación exacta de OS/Python.
-psycopg2-binary==2.9.10

@@ -14,3 +14,7 @@ python-dotenv==1.0.1
 alembic==1.14.0
 pytest==8.3.4
 httpx==0.27.2
+# Necesario en prod (Render, Vercel) en cuanto DATABASE_URL apunta a Postgres real.
+# En dev/test se queda sin usar (SQLite no lo necesita), pero así Vercel — que
+# solo instala este archivo, no requirements-postgres.txt — ya lo trae.
+psycopg2-binary==2.9.10
