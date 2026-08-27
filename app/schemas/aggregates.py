@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 from typing import List, Optional
 
@@ -72,6 +72,7 @@ class CategoryBudgetRead(BaseModel):
     spent: Decimal
     credit_spent: Decimal
     credit_pending: Decimal
+    created_at: Optional[datetime]
 
 
 class BudgetResponse(BaseModel):
