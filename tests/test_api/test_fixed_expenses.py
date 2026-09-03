@@ -133,3 +133,35 @@ class TestPayFixedExpense:
 
         response = client.post(f"/api/v1/fixed-expenses/{fixed_id}/pay", json={}, headers=auth_headers(user))
         assert response.status_code == 404
+
+    def test_pagar_gasto_fijo_con_fuente_personalizada(
+        self, client, session: Session, user: User, account: Account, category: Category
+    ):
+        card = make_card(session, user, statement_day=25, payment_term_days=20, name="Revolut")
+        # Creado originalmente con account (efectivo/debito)
+        create = client.post(
+            "/api/v1/fixed-expenses",
+            json={
+                "name": "Renta", "amount": "8500.00", "day_of_month": 1,
+                "category_id": category.id, "account_id": account.id,
+            },
+            headers=auth_headers(user),
+        )
+        fixed_id = create.json()["id"]
+        balance_before = account.balance
+
+        # Pagado explícitamente con tarjeta
+        response = client.post(
+            f"/api/v1/fixed-expenses/{fixed_id}/pay",
+            json={"credit_card_id": card.id},
+            headers=auth_headers(user),
+        )
+        assert response.status_code == 201
+        body = response.json()
+        assert body["credit_card_id"] == card.id
+        assert body["account_id"] is None
+        assert body["payment_method"] == "CREDIT"
+
+        # El saldo de la cuenta no debió tocarse
+        session.refresh(account)
+        assert account.balance == balance_before

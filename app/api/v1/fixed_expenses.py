@@ -107,10 +107,14 @@ def pay_fixed_expense(
 
     transaction_date = payload.transaction_date or date.today()
 
-    if fixed.credit_card_id is not None:
-        card = db.get(CreditCard, fixed.credit_card_id)
-        if card is None:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="La tarjeta de este gasto fijo ya no existe")
+    has_custom_source = payload.credit_card_id is not None or payload.account_id is not None
+    use_credit_card_id = payload.credit_card_id if has_custom_source else fixed.credit_card_id
+    use_account_id = payload.account_id if has_custom_source else fixed.account_id
+
+    if use_credit_card_id is not None:
+        card = db.get(CreditCard, use_credit_card_id)
+        if card is None or card.user_id != user.id:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="La tarjeta seleccionada no existe")
         cycle = cycle_service.get_or_create_cycle(db, card, transaction_date)
         transaction = Transaction(
             user_id=user.id,
@@ -128,9 +132,9 @@ def pay_fixed_expense(
         db.flush()
         cycle_service.recalculate_cycle_total(db, cycle)
     else:
-        account = db.get(Account, fixed.account_id)
-        if account is None:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="La cuenta de este gasto fijo ya no existe")
+        account = db.get(Account, use_account_id)
+        if account is None or account.user_id != user.id:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="La cuenta seleccionada no existe")
         transaction = Transaction(
             user_id=user.id,
             amount=fixed.amount,

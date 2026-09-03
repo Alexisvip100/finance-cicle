@@ -35,6 +35,14 @@ class FixedExpensePay(BaseModel):
     # Por defecto se registra con fecha de hoy — se puede pasar otra fecha
     # si el usuario está capturando un pago que ya hizo días atrás.
     transaction_date: Optional[date] = None
+    account_id: Optional[int] = None
+    credit_card_id: Optional[int] = None
+
+    @model_validator(mode="after")
+    def _validate_source(self):
+        if self.account_id is not None and self.credit_card_id is not None:
+            raise ValueError("Solo puedes especificar una fuente: account_id o credit_card_id")
+        return self
 
 
 class FixedExpenseRead(BaseModel):
