@@ -28,6 +28,8 @@ class FixedExpenseUpdate(BaseModel):
     amount: Optional[Decimal] = None
     day_of_month: Optional[int] = None
     category_id: Optional[int] = None
+    account_id: Optional[int] = None
+    credit_card_id: Optional[int] = None
     is_active: Optional[bool] = None
 
 

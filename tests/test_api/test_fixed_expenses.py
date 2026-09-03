@@ -165,3 +165,28 @@ class TestPayFixedExpense:
         # El saldo de la cuenta no debió tocarse
         session.refresh(account)
         assert account.balance == balance_before
+
+    def test_cambiar_fuente_de_gasto_fijo(
+        self, client, session: Session, user: User, account: Account, category: Category
+    ):
+        card = make_card(session, user, statement_day=25, payment_term_days=20, name="Revolut")
+        create = client.post(
+            "/api/v1/fixed-expenses",
+            json={
+                "name": "Renta", "amount": "8500.00", "day_of_month": 1,
+                "category_id": category.id, "account_id": account.id,
+            },
+            headers=auth_headers(user),
+        )
+        fixed_id = create.json()["id"]
+
+        # Cambiar de cuenta a tarjeta
+        patched = client.patch(
+            f"/api/v1/fixed-expenses/{fixed_id}",
+            json={"credit_card_id": card.id},
+            headers=auth_headers(user),
+        )
+        assert patched.status_code == 200
+        body = patched.json()
+        assert body["credit_card_id"] == card.id
+        assert body["account_id"] is None

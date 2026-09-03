@@ -74,7 +74,25 @@ def update_fixed_expense(
     user: User = Depends(get_current_user),
 ):
     fixed = _get_owned(db, user, fixed_expense_id)
-    for field, value in payload.model_dump(exclude_unset=True).items():
+    if payload.category_id is not None:
+        cat = db.get(Category, payload.category_id)
+        if cat is None or cat.user_id != user.id:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="La categoría no existe")
+    if payload.account_id is not None:
+        acc = db.get(Account, payload.account_id)
+        if acc is None or acc.user_id != user.id:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="La cuenta no existe")
+        fixed.account_id = payload.account_id
+        fixed.credit_card_id = None
+    elif payload.credit_card_id is not None:
+        card = db.get(CreditCard, payload.credit_card_id)
+        if card is None or card.user_id != user.id:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="La tarjeta no existe")
+        fixed.credit_card_id = payload.credit_card_id
+        fixed.account_id = None
+
+    updates = payload.model_dump(exclude_unset=True, exclude={"account_id", "credit_card_id"})
+    for field, value in updates.items():
         setattr(fixed, field, value)
     db.commit()
     db.refresh(fixed)
