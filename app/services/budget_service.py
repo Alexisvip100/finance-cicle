@@ -11,7 +11,6 @@ compra a MSI, pendiente = mensualidades que aún no se han pagado.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
 from decimal import Decimal
 from typing import Dict, List, Optional
 
@@ -37,7 +36,6 @@ class CategoryBudgetSummary:
     spent: Decimal
     credit_spent: Decimal
     credit_pending: Decimal
-    created_at: Optional[datetime]
 
 
 def _month_bounds(month: str):
@@ -61,9 +59,7 @@ def month_summary(session: Session, user_id: int, month: str) -> List[CategoryBu
     categories_stmt = select(Category).where(Category.user_id == user_id)
     categories = {c.id: c for c in session.execute(categories_stmt).scalars()}
 
-    def _summarize(
-        category_id: Optional[int], name: str, monthly_limit: Optional[Decimal], created_at: Optional[datetime]
-    ) -> Optional[CategoryBudgetSummary]:
+    def _summarize(category_id: Optional[int], name: str, monthly_limit: Optional[Decimal]) -> Optional[CategoryBudgetSummary]:
         txns = by_category.get(category_id, [])
         spent = sum((t.amount for t in txns), start=ZERO)
         if spent == ZERO and monthly_limit is None:
@@ -78,16 +74,15 @@ def month_summary(session: Session, user_id: int, month: str) -> List[CategoryBu
             spent=spent,
             credit_spent=credit_spent,
             credit_pending=credit_pending,
-            created_at=created_at,
         )
 
     results: List[CategoryBudgetSummary] = []
     for category_id, category in categories.items():
-        summary = _summarize(category_id, category.name, category.monthly_limit, category.created_at)
+        summary = _summarize(category_id, category.name, category.monthly_limit)
         if summary is not None:
             results.append(summary)
 
-    uncategorized = _summarize(None, "Sin categoría", None, None)
+    uncategorized = _summarize(None, "Sin categoría", None)
     if uncategorized is not None:
         results.append(uncategorized)
 

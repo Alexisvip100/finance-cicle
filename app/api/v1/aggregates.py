@@ -132,7 +132,6 @@ def get_budget(
                 spent=s.spent,
                 credit_spent=s.credit_spent,
                 credit_pending=s.credit_pending,
-                created_at=s.created_at,
             )
             for s in summaries
         ],
